@@ -16,7 +16,7 @@ $user = Auth::user();
 </head>
 <body>
 <header class="site-header">
-    <h1><a href="/index.php"><?= e(SITE_NAME) ?></a></h1>
+    <h1><a href="/"><?= e(SITE_NAME) ?></a></h1>
     <p class="tagline"><?= e(SITE_TAGLINE) ?></p>
 </header>
 <div class="accent-line"></div>
