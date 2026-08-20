@@ -10,7 +10,7 @@ $isNew = $existing === null;
 
 $errors = [];
 $title = $existing['title'] ?? '';
-$category = $existing['category'] ?? 'General';
+$category = $existing !== null ? display_category($existing['category']) : 'General';
 $content = $existing['content'] ?? '';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -26,7 +26,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
 
         if (empty($errors)) {
-            $categoryDir = sanitize_segment($category);
+            $categoryDir = category_folder_name($category);
 
             if ($isNew) {
                 $slug = slugify($title);

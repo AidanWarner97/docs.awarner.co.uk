@@ -24,8 +24,10 @@ function slugify(string $text): string
     return $text !== '' ? $text : 'page-' . bin2hex(random_bytes(3));
 }
 
-// Sanitizes a single path segment (category folder name) - keeps it human
-// readable but strips anything that could be used for path traversal.
+// Sanitizes a single path segment (category folder name or slug) for safe
+// lookup on disk - strips anything that could be used for path traversal,
+// but otherwise leaves it alone (existing folders, e.g. synced from GitHub,
+// may still legitimately contain spaces).
 function sanitize_segment(string $name): string
 {
     $name = trim($name);
@@ -35,6 +37,21 @@ function sanitize_segment(string $name): string
     $name = trim($name, ". ");
 
     return $name !== '' ? $name : 'General';
+}
+
+// Used specifically when saving a category from user input (the web editor):
+// spaces become underscores so newly-created categories never need a
+// percent-encoded URL (e.g. "Evolution X CDN" -> "Evolution_X_CDN").
+function category_folder_name(string $name): string
+{
+    return str_replace(' ', '_', sanitize_segment($name));
+}
+
+// Turns a category folder name back into a friendly display form, e.g.
+// "Evolution_X_CDN" -> "Evolution X CDN".
+function display_category(string $category): string
+{
+    return str_replace('_', ' ', $category);
 }
 
 function prettify_slug(string $slug): string

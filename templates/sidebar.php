@@ -10,7 +10,7 @@ $currentPath = $_GET['path'] ?? null;
     <?php else: ?>
         <?php foreach ($grouped as $category => $pages): ?>
             <details class="tree-category" open>
-                <summary><?= e($category) ?></summary>
+                <summary><?= e(display_category($category)) ?></summary>
                 <ul class="tree-pages">
                     <?php foreach ($pages as $p): ?>
                         <li>

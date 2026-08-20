@@ -55,8 +55,10 @@ if (!is_dir(CONTENT_DIR) && !mkdir(CONTENT_DIR, 0775, true) && !is_dir(CONTENT_D
     exit(1);
 }
 
-[$code] = run_git(['rev-parse', '--is-inside-work-tree'], CONTENT_DIR);
-if ($code !== 0) {
+// Check CONTENT_DIR itself has a .git, not just "is inside a work tree"
+// (the latter would say yes if some ancestor directory happens to be a repo
+// too, e.g. the project root - and then wrongly reuse/reset *that* repo).
+if (!is_dir(CONTENT_DIR . '/.git')) {
     log_line('Initializing git repo in ' . CONTENT_DIR);
     [$code, , $err] = run_git(['init', '-q'], CONTENT_DIR);
     if ($code !== 0) {

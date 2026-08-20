@@ -2,7 +2,7 @@ data/wiki.sqlite
 data/*.sqlite
 data/content-sync.log
 data/content-repo-status.json
-!content/uploads/.gitkeep
+data/content-repo.lock
 content/*
 src/content-repo.php
 .DS_Store

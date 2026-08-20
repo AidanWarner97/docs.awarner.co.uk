@@ -21,7 +21,7 @@ render_layout($pageTitle, function () use ($page) {
         <div>
             <h1><?= e($page['title']) ?></h1>
             <div class="meta">
-                <?= e($page['category']) ?> &middot; Updated <?= e($page['updated_at']) ?>
+                <?= e(display_category($page['category'])) ?> &middot; Updated <?= e($page['updated_at']) ?>
             </div>
         </div>
         <?php if (Auth::check()): ?>
