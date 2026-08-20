@@ -1,0 +1,16 @@
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+
+    # Real files/directories (this repo's own public/ folder, static assets
+    # requested directly, etc.) are left alone.
+    RewriteCond %{REQUEST_FILENAME} -f [OR]
+    RewriteCond %{REQUEST_FILENAME} -d
+    RewriteRule ^ - [L]
+
+    # Everything else is served out of public/, so the whole app works even
+    # on hosts that force the document root to stay at the repo root instead
+    # of public/ (upload the whole project as-is). public/.htaccess then
+    # applies its own pretty-URL rewriting on top of this.
+    RewriteRule ^$ public/index.php [L]
+    RewriteRule ^(.*)$ public/$1 [L]
+</IfModule>

@@ -63,6 +63,21 @@ server {
 }
 ```
 
+### Shared hosting where you can't change the document root
+
+Some shared hosts (cheap/basic cPanel-style plans) always point the domain's
+document root at a fixed folder (e.g. `public_html`) with no option to change
+it to `public/`. For that case, upload the **entire project as-is** into that
+folder — the root [.htaccess](.htaccess) and [index.php](index.php) act as a
+bridge, transparently routing every request into `public/` (static assets,
+`login.php`, pretty URLs, etc. all work exactly the same). `src/`, `content/`,
+`data/`, `templates/` and `bin/` stay protected either way, via their own
+deny-all `.htaccess`.
+
+If your host *does* let you set the document root to a specific folder (most
+cPanel addon domains/subdomains do), point it straight at `public/` instead
+per the main instructions above — it's simpler and doesn't need the bridge.
+
 ## Content: just add Markdown files
 
 Pages are plain `.md` files on disk under `content/`, one sub-folder per
