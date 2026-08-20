@@ -1,0 +1,11 @@
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+
+    # Existing files and directories (php scripts, assets, etc.) are served as-is.
+    RewriteCond %{REQUEST_FILENAME} -f [OR]
+    RewriteCond %{REQUEST_FILENAME} -d
+    RewriteRule ^ - [L]
+
+    # Pretty page URLs: /Category/slug -> page.php?path=Category/slug
+    RewriteRule ^([^/]+)/([^/]+)/?$ page.php?path=$1/$2 [QSA,L]
+</IfModule>
