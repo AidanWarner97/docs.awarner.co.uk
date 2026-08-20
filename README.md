@@ -150,8 +150,14 @@ back any change made through `/edit.php`, `/delete.php` or an image upload.
 4. Add it to cron, e.g. every 15 minutes:
 
    ```cron
-   */15 * * * * php /path/to/docs.awarner.co.uk/bin/sync-content.php >> /path/to/docs.awarner.co.uk/data/content-sync.log 2>&1
+   */15 * * * * php /path/to/docs.awarner.co.uk/bin/sync-content.php
    ```
+
+   No output redirection needed — it always logs to `data/logs/content-sync.log`
+   regardless of how it's run (cron, manual SSH, etc). Web-triggered pushes
+   (from `/edit.php`, `/delete.php`, uploads) log to `data/logs/content-push.log`,
+   including *why* nothing happened if sync isn't set up yet (missing
+   `src/content-repo.php`, or `content/` not yet a git repo).
 
 How it fits together:
 

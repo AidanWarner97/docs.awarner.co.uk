@@ -5,10 +5,11 @@ require_once __DIR__ . '/Markdown/Parsedown.php';
 
 // Shared helper functions used across the app.
 //
-// Pages are plain Markdown files on disk under CONTENT_DIR, one folder per
-// category: content/{Category}/{page-slug}.md. This means pages can be added
-// directly (via FTP/git/etc) without going through the web editor at all.
-// An optional YAML-lite front matter block can set an explicit title:
+// Pages are plain Markdown files on disk under CONTENT_DIR, in nested
+// category folders: content/{Category}/{Subcategory...}/{page-slug}.md.
+// This means pages can be added directly (via FTP/git/etc) without going
+// through the web editor at all. An optional YAML-lite front matter block
+// can set an explicit title:
 //   ---
 //   title: My Page Title
 //   ---
@@ -40,18 +41,24 @@ function sanitize_segment(string $name): string
 }
 
 // Used specifically when saving a category from user input (the web editor):
-// spaces become underscores so newly-created categories never need a
-// percent-encoded URL (e.g. "Evolution X CDN" -> "Evolution_X_CDN").
+// spaces become underscores in each segment so newly-created categories never
+// need a percent-encoded URL (e.g. "Evolution X CDN" -> "Evolution_X_CDN").
+// A "/" in the input creates nested subcategories, e.g. "Evolution X/CDN".
 function category_folder_name(string $name): string
 {
-    return str_replace(' ', '_', sanitize_segment($name));
+    $segments = array_filter(array_map('trim', explode('/', $name)), fn ($s) => $s !== '');
+    $segments = array_map(fn ($s) => str_replace(' ', '_', sanitize_segment($s)), $segments);
+
+    return $segments !== [] ? implode('/', $segments) : 'General';
 }
 
-// Turns a category folder name back into a friendly display form, e.g.
-// "Evolution_X_CDN" -> "Evolution X CDN".
+// Turns a category folder path back into a friendly display form, e.g.
+// "Evolution_X/CDN" -> "Evolution X / CDN".
 function display_category(string $category): string
 {
-    return str_replace('_', ' ', $category);
+    $segments = array_map(fn ($s) => str_replace('_', ' ', $s), explode('/', $category));
+
+    return implode(' / ', $segments);
 }
 
 function prettify_slug(string $slug): string
@@ -59,11 +66,41 @@ function prettify_slug(string $slug): string
     return ucwords(str_replace(['-', '_'], ' ', $slug));
 }
 
-// Builds the pretty "/Category/slug" URL for a page (rewritten to
+// Recursively renders the sidebar's nested category tree (see
+// build_category_tree()), including any depth of subcategories.
+function render_sidebar_tree(array $tree, ?string $currentPath): void
+{
+    foreach ($tree as $categoryName => $node) {
+        ?>
+        <details class="tree-category" open>
+            <summary><?= e(display_category($categoryName)) ?></summary>
+            <?php if (!empty($node['pages'])): ?>
+                <ul class="tree-pages">
+                    <?php foreach ($node['pages'] as $p): ?>
+                        <li>
+                            <a href="<?= e(page_url($p['path'])) ?>"
+                               class="<?= $currentPath === $p['path'] ? 'active' : '' ?>">
+                                <?= e($p['title']) ?>
+                            </a>
+                        </li>
+                    <?php endforeach; ?>
+                </ul>
+            <?php endif; ?>
+            <?php if (!empty($node['children'])): ?>
+                <div class="tree-subcategories">
+                    <?php render_sidebar_tree($node['children'], $currentPath); ?>
+                </div>
+            <?php endif; ?>
+        </details>
+        <?php
+    }
+}
+
+// Builds the pretty "/Category/.../slug" URL for a page (rewritten to
 // page.php?path=... by .htaccess/nginx config or the local dev router).
 function page_url(string $path): string
 {
-    $segments = array_map('rawurlencode', explode('/', $path, 2));
+    $segments = array_map('rawurlencode', explode('/', $path));
 
     return '/' . implode('/', $segments);
 }
@@ -148,17 +185,19 @@ function write_page_file(string $absPath, string $title, string $body): void
     file_put_contents($absPath, $frontMatter . ltrim($body) . "\n");
 }
 
-// Resolves a category/slug pair to an absolute file path, guaranteeing the
-// result stays within CONTENT_DIR (defends against path traversal).
+// Resolves a category path/slug pair to an absolute file path, guaranteeing
+// the result stays within CONTENT_DIR (defends against path traversal).
+// $category may contain "/" for nested subcategories.
 function resolve_page_file(string $category, string $slug, bool $mustExist = true): ?string
 {
-    $category = sanitize_segment($category);
+    $segments = array_filter(explode('/', $category), fn ($s) => $s !== '');
+    $segments = array_map('sanitize_segment', $segments);
     $slug = sanitize_segment($slug);
-    if ($category === '' || $slug === '') {
+    if ($segments === [] || $slug === '') {
         return null;
     }
 
-    $file = CONTENT_DIR . '/' . $category . '/' . $slug . '.md';
+    $file = CONTENT_DIR . '/' . implode('/', $segments) . '/' . $slug . '.md';
 
     if (!$mustExist) {
         return $file;
@@ -193,11 +232,26 @@ function all_pages(): array
         return $pages;
     }
 
-    foreach (glob(CONTENT_DIR . '/*', GLOB_ONLYDIR) ?: [] as $dir) {
-        $category = basename($dir);
-        foreach (glob($dir . '/*.md') ?: [] as $file) {
-            $pages[] = build_page_entry($file, $category, basename($file, '.md'));
+    // Recurse through every nested category folder, skipping .git/ and uploads/.
+    $filter = function (SplFileInfo $current) {
+        return $current->isDir() ? !in_array($current->getFilename(), ['.git', 'uploads'], true) : $current->getExtension() === 'md';
+    };
+    $iterator = new RecursiveIteratorIterator(
+        new RecursiveCallbackFilterIterator(
+            new RecursiveDirectoryIterator(CONTENT_DIR, FilesystemIterator::SKIP_DOTS),
+            $filter
+        )
+    );
+
+    $root = realpath(CONTENT_DIR);
+    foreach ($iterator as $file) {
+        $relative = substr($file->getPathname(), strlen($root) + 1);
+        $category = str_replace(DIRECTORY_SEPARATOR, '/', dirname($relative));
+        if ($category === '.') {
+            continue; // .md files directly in content/ have no category, so are skipped
         }
+
+        $pages[] = build_page_entry($file->getPathname(), $category, basename($relative, '.md'));
     }
 
     usort($pages, fn (array $a, array $b) => [$a['category'], $a['title']] <=> [$b['category'], $b['title']]);
@@ -216,22 +270,50 @@ function pages_by_category(): array
     return $grouped;
 }
 
-// $path is "Category/slug" as used in page URLs.
+// Nests the flat category => pages map from pages_by_category() into a tree,
+// so the sidebar can render subcategories (e.g. "Evolution_X/CDN") inside
+// their parent ("Evolution_X") instead of as a separate top-level entry.
+// Each node looks like ['pages' => [...], 'children' => [name => node, ...]].
+function build_category_tree(): array
+{
+    $tree = [];
+    foreach (pages_by_category() as $categoryPath => $pages) {
+        $segments = explode('/', $categoryPath);
+        $node = &$tree;
+        foreach ($segments as $i => $segment) {
+            if (!isset($node[$segment])) {
+                $node[$segment] = ['pages' => [], 'children' => []];
+            }
+            if ($i === count($segments) - 1) {
+                $node[$segment]['pages'] = $pages;
+            }
+            $node = &$node[$segment]['children'];
+        }
+        unset($node);
+    }
+
+    return $tree;
+}
+
+// $path is "Category/.../slug" as used in page URLs - the category portion
+// may itself contain "/" for subcategories, so split at the last "/".
 function find_page(string $path): ?array
 {
-    $parts = explode('/', $path, 2);
-    if (count($parts) !== 2) {
+    $lastSlash = strrpos($path, '/');
+    if ($lastSlash === false) {
         return null;
     }
 
-    [$category, $slug] = $parts;
+    $category = substr($path, 0, $lastSlash);
+    $slug = substr($path, $lastSlash + 1);
     $file = resolve_page_file($category, $slug);
     if ($file === null || !is_file($file)) {
         return null;
     }
 
     $parsed = parse_markdown_file($file);
-    $category = sanitize_segment($category);
+    $segments = array_map('sanitize_segment', explode('/', $category));
+    $category = implode('/', $segments);
     $slug = sanitize_segment($slug);
 
     return [

@@ -1,6 +1,6 @@
 data/wiki.sqlite
 data/*.sqlite
-data/content-sync.log
+data/logs/
 data/content-repo-status.json
 data/content-repo.lock
 content/*

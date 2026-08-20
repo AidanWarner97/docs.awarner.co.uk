@@ -127,6 +127,12 @@ a:hover { text-decoration: underline; }
 .tree-pages a:hover { color: var(--text-main); background: rgba(91, 127, 219, 0.12); text-decoration: none; }
 .tree-pages a.active { color: #fff; background: var(--accent); }
 
+.tree-subcategories {
+    padding-left: 0.9rem;
+    margin: 0.2rem 0 0.4rem;
+    border-left: 1px solid var(--border-color);
+}
+
 .container {
     flex: 1;
     min-width: 0;

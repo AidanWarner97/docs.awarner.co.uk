@@ -6,6 +6,7 @@
     RewriteCond %{REQUEST_FILENAME} -d
     RewriteRule ^ - [L]
 
-    # Pretty page URLs: /Category/slug -> page.php?path=Category/slug
-    RewriteRule ^([^/]+)/([^/]+)/?$ page.php?path=$1/$2 [QSA,L]
+    # Pretty page URLs: /Category/.../slug -> page.php?path=Category/.../slug
+    # (the category portion can itself have "/"s for nested subcategories)
+    RewriteRule ^(.+)/([^/]+)/?$ page.php?path=$1/$2 [QSA,L]
 </IfModule>

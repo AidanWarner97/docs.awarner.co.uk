@@ -16,6 +16,7 @@ require __DIR__ . '/../src/config.php';
 function log_line(string $message): void
 {
     echo '[' . date('Y-m-d H:i:s') . '] ' . $message . PHP_EOL;
+    app_log('content-sync.log', $message);
 }
 
 function run_git(array $args, string $cwd): array

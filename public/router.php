@@ -12,7 +12,7 @@ if ($uri !== '/' && is_file($file)) {
     return false; // serve the requested file (assets, php scripts, etc.) as-is
 }
 
-if (preg_match('#^/([^/]+)/([^/]+)/?$#', $uri, $m)) {
+if (preg_match('#^/(.+)/([^/]+)/?$#', $uri, $m)) {
     $_GET['path'] = $m[1] . '/' . $m[2];
     require __DIR__ . '/page.php';
     return true;

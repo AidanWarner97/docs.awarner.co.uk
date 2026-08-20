@@ -80,6 +80,11 @@ final class ContentRepo
     ): ?string {
         $config = self::config();
         if ($config === null || !is_dir(CONTENT_DIR . '/.git') || empty($relativePaths)) {
+            if ($config === null) {
+                app_log('content-push.log', 'Skipped: src/content-repo.php missing or has no url.');
+            } elseif (!is_dir(CONTENT_DIR . '/.git')) {
+                app_log('content-push.log', 'Skipped: content/ has no .git yet - run bin/sync-content.php once first.');
+            }
             return null;
         }
 
@@ -87,6 +92,8 @@ final class ContentRepo
             $branch = (string) ($config['branch'] ?? 'main');
             $authorName = $authorName ?? (string) ($config['author_name'] ?? 'Docs Wiki');
             $authorEmail = $authorEmail ?? (string) ($config['author_email'] ?? 'docs-wiki@localhost');
+
+            app_log('content-push.log', "Push requested: {$message} (" . implode(', ', $relativePaths) . ')');
 
             // Keep the remote in sync with config, in case it was changed since the last run.
             [, $remotes] = self::run(['remote']);
@@ -99,6 +106,7 @@ final class ContentRepo
 
             [, $status] = self::run(array_merge(['status', '--porcelain', '--'], $relativePaths));
             if ($status === '') {
+                app_log('content-push.log', 'Nothing to push (no changes detected).');
                 return null; // nothing actually changed
             }
 
@@ -110,14 +118,17 @@ final class ContentRepo
                 'commit', '-m', $message,
             ]);
             if ($code !== 0) {
+                app_log('content-push.log', 'Commit failed: ' . $err);
                 return 'Could not commit the change locally: ' . $err;
             }
 
             [$code, , $err] = self::run(['push', 'origin', 'HEAD:' . $branch]);
             if ($code !== 0) {
+                app_log('content-push.log', 'Push failed: ' . $err);
                 return 'Change saved, but the push to GitHub failed: ' . $err;
             }
 
+            app_log('content-push.log', 'Pushed successfully.');
             return null;
         });
     }

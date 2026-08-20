@@ -97,6 +97,7 @@ render_layout($pageTitle, function () use ($errors, $title, $category, $content,
 
             <label for="category">Category</label>
             <input type="text" id="category" name="category" value="<?= e($category) ?>" placeholder="General">
+            <p class="meta">Use "/" for subcategories, e.g. "Evolution X / CDN".</p>
 
             <label for="content">Content (Markdown)</label>
             <textarea id="content" name="content" placeholder="# Heading&#10;&#10;Write your documentation here using Markdown..."><?= e($content) ?></textarea>
