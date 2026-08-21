@@ -113,6 +113,13 @@ function render_markdown(string $markdown, ?string $baseDir = null): string
         $parser->setSafeMode(true); // strips raw HTML/JS to prevent stored XSS
     }
 
+    // Keep tables forgiving when a label is placed directly before its header.
+    $markdown = preg_replace_callback(
+        '/^([^\n]+:)\n(?=\s*\|[^\n]*\|\s*\n\s*\|?\s*:?-{3,})/m',
+        static fn (array $match): string => $match[1] . "\n\n",
+        $markdown
+    ) ?? $markdown;
+
     if ($baseDir !== null) {
         $markdown = rewrite_relative_image_paths($markdown, $baseDir);
     }
