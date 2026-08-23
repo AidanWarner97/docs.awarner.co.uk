@@ -181,9 +181,15 @@ so the whole `content/` folder — pages and images — can be backed up, moved
 or put under git as one unit. When GitHub sync is configured, uploaded images
 are committed and pushed just like page edits.
 
-Since `content/` sits outside the web root (`public/`) for security, images
-are streamed through [public/media.php](public/media.php) rather than served
-directly: reference them in Markdown as `![alt text](/media.php?file=2026/08/xyz.jpg)`.
+Since `content/` sits outside the web root (`public/`) for security, `public/`
+contains a symlink (`public/uploads` → `content/uploads`, created
+automatically on first request - see `src/bootstrap.php`) so images are
+served directly by the web server with no PHP involved. Reference them in
+Markdown with a normal relative path from the page's own file, e.g.
+`![alt text](../uploads/2026/08/xyz.jpg)` — it's rewritten to `/uploads/2026/08/xyz.jpg`
+at render time. If your host doesn't support symlinks, it automatically
+falls back to streaming images through [public/media.php](public/media.php)
+(`/media.php?file=2026/08/xyz.jpg`) instead, so nothing breaks either way.
 
 Logged-in users can upload via the "Upload Image" panel on the edit page,
 which validates the file (real image content-type check via `getimagesize` +

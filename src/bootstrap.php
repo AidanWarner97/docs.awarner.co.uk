@@ -24,6 +24,14 @@ foreach ([CONTENT_DIR, UPLOAD_DIR] as $dir) {
     }
 }
 
+// Serve uploads directly (no PHP) when possible: symlink public/uploads to
+// content/uploads. Falls back to streaming through media.php if the host
+// doesn't allow symlinks (see rewrite_relative_image_paths()/upload.php).
+$publicUploadsLink = APP_ROOT . '/public/uploads';
+if (!file_exists($publicUploadsLink) && !is_link($publicUploadsLink)) {
+    @symlink(UPLOAD_DIR, $publicUploadsLink);
+}
+
 $hasUsers = (int) Database::get()->query('SELECT COUNT(*) AS c FROM users')->fetch()['c'] > 0;
 if (!$hasUsers && basename($_SERVER['SCRIPT_NAME']) !== 'setup.php') {
     header('Location: /setup.php');

@@ -1,6 +1,10 @@
 <IfModule mod_rewrite.c>
     RewriteEngine On
 
+    # public/uploads is a symlink to content/uploads (see bootstrap.php) so
+    # images can be served directly without going through media.php.
+    Options +FollowSymLinks
+
     # Existing files and directories (php scripts, assets, etc.) are served as-is.
     RewriteCond %{REQUEST_FILENAME} -f [OR]
     RewriteCond %{REQUEST_FILENAME} -d

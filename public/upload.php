@@ -93,7 +93,7 @@ if (!$saved) {
 
 $relativePath = 'uploads/' . $subDir . '/' . $filename;
 
-$publicUrl = '/media.php?file=' . rawurlencode($subDir . '/' . $filename);
+$publicUrl = upload_url($subDir . '/' . $filename);
 $_SESSION['flash_success'] = 'Image uploaded. Markdown snippet: ![alt text](' . $publicUrl . ')'
     . (ContentRepo::isEnabled() ? ' Syncing to GitHub in the background.' : '');
 header('Location: ' . $returnTo);

@@ -5,4 +5,5 @@ data/content-repo-status.json
 data/content-repo.lock
 content/*
 src/content-repo.php
+public/uploads
 .DS_Store

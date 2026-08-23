@@ -128,10 +128,9 @@ function render_markdown(string $markdown, ?string $baseDir = null): string
 }
 
 // Lets Markdown files reference images with a relative path (e.g. next to the
-// page, like "../uploads/2026/08/photo.jpg") by rewriting them to the
-// /media.php URL that actually serves content/uploads/ (which sits outside
-// the web root). Anything that doesn't resolve inside content/uploads/ is
-// left untouched.
+// page, like "../uploads/2026/08/photo.jpg") by rewriting them to a URL that
+// actually serves content/uploads/ (which sits outside the web root).
+// Anything that doesn't resolve inside content/uploads/ is left untouched.
 function rewrite_relative_image_paths(string $markdown, string $baseDir): string
 {
     $uploadsRoot = realpath(UPLOAD_DIR);
@@ -149,8 +148,27 @@ function rewrite_relative_image_paths(string $markdown, string $baseDir): string
 
         $relative = str_replace(DIRECTORY_SEPARATOR, '/', ltrim(substr($resolved, strlen($uploadsRoot)), '/\\'));
 
-        return '![' . $m[1] . '](/media.php?file=' . rawurlencode($relative) . $m[3] . ')';
+        return '![' . $m[1] . '](' . upload_url($relative) . $m[3] . ')';
     }, $markdown) ?? $markdown;
+}
+
+// Public URL for a file at $relativePath inside content/uploads/. Prefers a
+// direct static link (public/uploads symlinked to content/uploads - see
+// bootstrap.php) so images load with no PHP involved; falls back to
+// media.php's streaming if the host doesn't support symlinks.
+function upload_url(string $relativePath): string
+{
+    static $directLinkWorks = null;
+    if ($directLinkWorks === null) {
+        $publicUploads = realpath(APP_ROOT . '/public/uploads');
+        $directLinkWorks = $publicUploads !== false && $publicUploads === realpath(UPLOAD_DIR);
+    }
+
+    if ($directLinkWorks) {
+        return '/uploads/' . implode('/', array_map('rawurlencode', explode('/', $relativePath)));
+    }
+
+    return '/media.php?file=' . rawurlencode($relativePath);
 }
 
 function e(string $value): string

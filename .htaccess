@@ -1,5 +1,6 @@
 <IfModule mod_rewrite.c>
     RewriteEngine On
+    Options +FollowSymLinks
 
     # Real files/directories (this repo's own public/ folder, static assets
     # requested directly, etc.) are left alone.
